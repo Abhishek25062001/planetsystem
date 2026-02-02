@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA SYSTEMS | Galactic Interface</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@300;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --glow: #3a86ff;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050508;
+            font-family: 'Orbitron', sans-serif;
+            color: white;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* --- HUD TELEMETRY --- */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 320px;
+            background: rgba(0, 0, 0, 0.7);
+            border-left: 3px solid var(--glow);
+            padding: 15px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+
+        .telemetry-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 4px;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* --- CENTER CARD --- */
+        .glass-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            min-width: 350px;
+        }
+
+        h1 {
+            letter-spacing: 5px;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            text-shadow: 0 0 10px var(--glow);
+        }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            color: white;
+            font-family: 'Roboto Mono';
+            outline: none;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: var(--glow);
+            border: none;
+            color: white;
+            font-family: 'Orbitron';
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            filter: brightness(1.2);
+            box-shadow: 0 0 20px var(--glow);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="hud">
+        <h3 style="margin-top:0; font-size: 14px; letter-spacing: 2px;">LIVE TELEMETRY</h3>
+        <div id="telemetry-list"></div>
+    </div>
+
+    <!-- <div class="glass-card">
+        <h1>NOVA SYSTEMS</h1>
+        <input type="email" placeholder="COMMAND_EMAIL@STARNET.IO">
+        <input type="tel" placeholder="+1 (555) 000-SPACE">
+        <br>
+        <button>INITIALIZE LINK</button>
+    </div> -->
+
+    <script>
+        /** * DATA DEFINITIONS 
+         */
+        const PLANET_DATA = [
+            { name: "Sun", radius: "696,340", speed: "220 km/s", color: 0xffcc00, size: 4, dist: 0, rot: 0.005 },
+            { name: "Mercury", radius: "2,439", speed: "47.4 km/s", color: 0xaaaaaa, size: 0.5, dist: 8, rot: 0.02 },
+            { name: "Venus", radius: "6,051", speed: "35.0 km/s", color: 0xe3bb76, size: 0.9, dist: 12, rot: 0.01 },
+            { name: "Earth", radius: "6,371", speed: "29.8 km/s", color: 0x2271b3, size: 1, dist: 16, rot: 0.015 },
+            { name: "Mars", radius: "3,389", speed: "24.1 km/s", color: 0xe27b58, size: 0.7, dist: 20, rot: 0.018 },
+            { name: "Jupiter", radius: "69,911", speed: "13.1 km/s", color: 0xd39c7e, size: 2.5, dist: 28, rot: 0.04 },
+            { name: "Saturn", radius: "58,232", speed: "9.7 km/s", color: 0xc5ab6e, size: 2.1, dist: 36, rot: 0.038 }
+        ];
+
+        let scene, camera, renderer, systemGroup;
+        let planetMeshes = [];
+        const clock = new THREE.Clock();
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 50;
+            camera.position.y = 15;
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Group to hold the entire system for R-to-L movement
+            systemGroup = new THREE.Group();
+            scene.add(systemGroup);
+
+            // Light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+
+            // 1. THE SUN (Particle Sphere)
+            const sunGeom = new THREE.SphereGeometry(4, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+            const sun = new THREE.Mesh(sunGeom, sunMat);
+
+            // Sun Glow Effect
+            const sunLight = new THREE.PointLight(0xffaa00, 2, 100);
+            sun.add(sunLight);
+            systemGroup.add(sun);
+
+            // Create Planets and Orbits
+            PLANET_DATA.forEach((data, index) => {
+                if (index === 0) return; // Skip sun logic for planets
+
+                // Orbit Line
+                const curve = new THREE.EllipseCurve(0, 0, data.dist, data.dist);
+                const points = curve.getPoints(100);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({ color: data.color, transparent: true, opacity: 0.3 });
+                const orbit = new THREE.Line(geometry, material);
+                orbit.rotation.x = Math.PI / 2;
+                systemGroup.add(orbit);
+
+                // Planet Mesh
+                const pGeom = new THREE.SphereGeometry(data.size, 32, 32);
+                const pMat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.7 });
+                const mesh = new THREE.Mesh(pGeom, pMat);
+
+                const pivot = new THREE.Group();
+                systemGroup.add(pivot);
+                pivot.add(mesh);
+                mesh.position.x = data.dist;
+
+                planetMeshes.push({ mesh, pivot, data, angle: Math.random() * Math.PI * 2 });
+            });
+
+            // Starfield
+            const starGeo = new THREE.BufferGeometry();
+            const starCount = 5000;
+            const posArray = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 400;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const starMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff });
+            const stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+
+            setupHUD();
+            animate();
+        }
+
+        function setupHUD() {
+            const list = document.getElementById('telemetry-list');
+            PLANET_DATA.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'telemetry-item';
+                item.innerHTML = `
+                    <span><span class="dot" style="background:${'#' + p.color.toString(16).padStart(6, '0')}"></span>${p.name}</span>
+                    <span style="color: #aaa;">RAD: ${p.radius} | ROT: ${p.speed}</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getElapsedTime();
+
+            // Right-to-Left movement (The Galactic Transit)
+            systemGroup.position.x -= 0.05;
+            // Reset position for loop effect
+            if (systemGroup.position.x < -80) systemGroup.position.x = 80;
+
+            // Planet Revolutions & Rotations
+            planetMeshes.forEach((p, i) => {
+                // Orbital speed relative to distance
+                p.angle += (0.02 / (i + 1));
+                p.mesh.position.x = Math.cos(p.angle) * p.data.dist;
+                p.mesh.position.z = Math.sin(p.angle) * p.data.dist;
+
+                // Self rotation
+                p.mesh.rotation.y += p.data.rot;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+
+</html>
