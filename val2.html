@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ek Baat Kahun? 💖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #FFE5E5 0%, #FFF0F5 50%, #FFFAF0 100%);
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .floating-emojis {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .emoji {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.6;
+            animation: floatUp 8s infinite linear;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.4; }
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 550px;
+            padding: 2.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.15);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .main-title {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #FF6B9D, #C44569);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            animation: slideIn 0.8s ease-out;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #6B4E71;
+            margin-bottom: 2.5rem;
+            font-weight: 500;
+            animation: slideIn 0.8s 0.2s ease-out both;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: slideIn 0.8s 0.4s ease-out both;
+        }
+        
+        .btn {
+            padding: 1.2rem 2.8rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .btn-yes {
+            background: linear-gradient(135deg, #FF6B9D, #FF8EAB);
+            color: white;
+        }
+        
+        .btn-yes:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 50px rgba(255, 107, 157, 0.5);
+        }
+        
+        .btn-no {
+            background: linear-gradient(135deg, #FFC857, #FFD93D);
+            color: #2D1B2E;
+            position: relative;
+        }
+        
+        .btn-no:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 200, 87, 0.4);
+        }
+        
+        .meme-text {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 200, 87, 0.2);
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2D1B2E;
+            border: 2px dashed #FFC857;
+            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .celebration-screen {
+            display: none;
+            text-align: center;
+        }
+        
+        .celebration-screen.show {
+            display: block;
+            animation: zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .celebration-title {
+            font-size: clamp(3rem, 10vw, 5rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, #FF6B9D, #FFC857, #FF8EAB);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .celebration-msg {
+            font-size: 1.5rem;
+            color: #6B4E71;
+            font-weight: 600;
+            margin-bottom: 2rem;
+        }
+        
+        .meme-img {
+            max-width: 300px;
+            border-radius: 20px;
+            margin: 1.5rem auto;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+        }
+        
+        @media (max-width: 640px) {
+            .container { padding: 2rem 1.5rem; margin: 1rem; }
+            .buttons { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Emojis Background -->
+    <div class="floating-emojis" id="floatingEmojis"></div>
+    
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Initial Screen -->
+        <div id="initialScreen">
+            <h1 class="main-title">Ek baat kahun? 👉👈</h1>
+            <p class="subtitle">Darne ki zaroorat nahi hai, bas sun lo 😌</p>
+            
+            <div class="buttons">
+                <button class="btn btn-yes" onclick="sayYes()">Haan Bol Do! 💖</button>
+                <button class="btn btn-no" id="noBtn" onclick="handleNo()">Nahi Yaar 😅</button>
+            </div>
+            
+            <div id="memeContainer"></div>
+        </div>
+        
+        <!-- Celebration Screen -->
+        <div id="celebrationScreen" class="celebration-screen">
+            <h1 class="celebration-title">LESSSGOOO! 🎉💖</h1>
+            <p class="celebration-msg">Abhi India Gate chalte hain! 🏛️✨</p>
+            <img src="https://i.imgur.com/7WrYZW0.gif" alt="Celebration" class="meme-img">
+            <p style="margin-top: 1.5rem; font-size: 1.1rem; color: #6B4E71;">
+                Metro se jayenge, momos bhi khayenge! 🥟🚇
+            </p>
+        </div>
+    </div>
+
+    <!-- BGM -->
+    <audio id="bgm" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a6b0c8c3a.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Delhi-style funny messages
+        const delhiMemes = [
+            "Arre bhai bhai bhai! Socho phir se! 🤔",
+            "CP jaake Momos khilaunga! 🥟",
+            "Mummy ko bol dunga tumhari location! 📍😂",
+            "Metro card bhi dunga unlimited! 🚇",
+            "Thik hai, Sharma ji ka beta se baat kara deta hoon 🤪",
+            "Arre yaar, itna bhi mat socho! Yes bol do! 🥺"
+        ];
+        
+        let clickCount = 0;
+        const noBtn = document.getElementById('noBtn');
+        const memeContainer = document.getElementById('memeContainer');
+        let bgmPlayed = false;
+        
+        // Play BGM on first interaction
+        document.addEventListener('click', () => {
+            if (!bgmPlayed) {
+                const bgm = document.getElementById('bgm');
+                bgm.volume = 0.25;
+                bgm.play().catch(e => console.log('BGM blocked'));
+                bgmPlayed = true;
+            }
+        }, { once: true });
+        
+        // Floating emojis
+        const emojis = ['💖', '🥟', '🚇', '🏛️', '☕', '❤️', '✨'];
+        function createFloatingEmoji() {
+            const emoji = document.createElement('div');
+            emoji.className = 'emoji';
+            emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            emoji.style.left = Math.random() * 100 + '%';
+            emoji.style.animationDuration = (Math.random() * 4 + 6) + 's';
+            emoji.style.animationDelay = Math.random() * 2 + 's';
+            document.getElementById('floatingEmojis').appendChild(emoji);
+            
+            setTimeout(() => emoji.remove(), 10000);
+        }
+        
+        setInterval(createFloatingEmoji, 1500);
+        
+        // Handle No button
+        function handleNo() {
+            if (clickCount < delhiMemes.length) {
+                // Show meme text
+                memeContainer.innerHTML = `<div class="meme-text">${delhiMemes[clickCount]}</div>`;
+                
+                // Move button randomly
+                const maxX = window.innerWidth - noBtn.offsetWidth - 40;
+                const maxY = window.innerHeight - noBtn.offsetHeight - 40;
+                
+                const randomX = Math.random() * maxX;
+                const randomY = Math.random() * maxY;
+                
+                noBtn.style.position = 'fixed';
+                noBtn.style.left = randomX + 'px';
+                noBtn.style.top = randomY + 'px';
+                noBtn.style.zIndex = '1000';
+                
+                // Shrink button progressively
+                const newSize = 100 - (clickCount * 10);
+                noBtn.style.fontSize = (1.3 - clickCount * 0.1) + 'rem';
+                noBtn.style.padding = (1.2 - clickCount * 0.1) + 'rem ' + (2.8 - clickCount * 0.2) + 'rem';
+                
+                clickCount++;
+                
+                // Remove meme after 2.5s
+                setTimeout(() => {
+                    if (memeContainer.firstChild) {
+                        memeContainer.firstChild.remove();
+                    }
+                }, 2500);
+            }
+        }
+        
+        // Say Yes
+        function sayYes() {
+            document.getElementById('initialScreen').style.display = 'none';
+            const celebScreen = document.getElementById('celebrationScreen');
+            celebScreen.classList.add('show');
+            
+            // Epic confetti
+            const duration = 3000;
+            const end = Date.now() + duration;
+            
+            const interval = setInterval(() => {
+                if (Date.now() > end) {
+                    return clearInterval(interval);
+                }
+                
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 },
+                    colors: ['#FF6B9D', '#FFC857', '#FF8EAB']
+                });
+                
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 },
+                    colors: ['#FF6B9D', '#FFC857', '#FF8EAB']
+                });
+            }, 50);
+            
+            // Big burst
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#FF6B9D', '#FFC857', '#FF8EAB', '#FFD93D']
+            });
+            
+            // Increase BGM volume
+            const bgm = document.getElementById('bgm');
+            bgm.volume = 0.5;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine's Love Meter</title>
+    
+    <meta property="og:title" content="How much do you love me?">
+    <meta property="og:description" content="Take the test and find out!">
+    <meta property="og:image" content="https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/apple/325/sparkling-heart_1f496.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            /* Color Palette */
+            --bg-primary: #1A0E1F;
+            --bg-secondary: #2A1A2E;
+            --accent-primary: #FF6B9D;
+            --accent-glow: rgba(255, 107, 157, 0.5);
+            --accent-secondary: #FFC857;
+            --text-primary: #FFF5F7;
+            --text-secondary: #C8B8DB;
+            
+            /* Transitions */
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background: radial-gradient(circle at 50% 10%, var(--bg-secondary), var(--bg-primary));
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden; /* Prevent scrolling */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        p {
+            color: var(--text-secondary);
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            line-height: 1.5;
+        }
+
+        /* Floating Hearts Background */
+        .hearts-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .heart {
+            position: absolute;
+            bottom: -10%;
+            font-size: 1.5rem;
+            opacity: 0;
+            animation: floatUp 15s linear infinite;
+            color: var(--accent-primary);
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Main Card Container */
+        .card {
+            background: rgba(42, 26, 46, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 2rem;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        /* Slide Up Animation on Load */
+        .animate-in {
+            animation: slideUpFade 0.8s ease-out forwards;
+        }
+
+        @keyframes slideUpFade {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Slider Styling */
+        .slider-container {
+            margin-top: 2.5rem;
+            position: relative;
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+            transition: box-shadow 0.2s;
+        }
+
+        /* Slider Thumb */
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--accent-primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: -10px; /* Aligns thumb with track */
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--accent-primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+        }
+
+        /* Custom Track (Chrome) */
+        .range-slider::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        /* Percentage Display */
+        .percentage {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent-secondary);
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            min-width: 120px;
+        }
+
+        .status-message {
+            min-height: 3rem; /* Prevents layout jump */
+            margin-top: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* Proposal Section (Hidden initially) */
+        .hidden {
+            display: none !important;
+        }
+
+        .btn-yes {
+            background-color: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.25rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 2rem;
+            box-shadow: 0 0 20px var(--accent-glow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-yes:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px var(--accent-primary);
+        }
+
+        .success-img {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        /* Utility classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="hearts-container" id="heartsContainer"></div>
+
+    <main>
+        <article id="screen1" class="card animate-in">
+            <h1>How much do you love me? 💕</h1>
+            <p>Be honest... or try to be 😏</p>
+
+            <div class="slider-container">
+                <div class="percentage" id="percentageDisplay">50%</div>
+                <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value="50" 
+                    class="range-slider" 
+                    id="loveSlider"
+                    aria-label="Love Percentage"
+                >
+                <div class="status-message" id="statusMessage">
+                    Getting warmer... but not enough 🤔
+                </div>
+            </div>
+        </article>
+
+        <article id="screen2" class="card hidden fade-in">
+            <h1>I knew it! ❤️</h1>
+            <p style="font-size: 1.1rem; margin-bottom: 2rem;">You can't resist me. So, one more thing...</p>
+            <h2 style="font-size: 2rem; color: var(--accent-secondary); margin-bottom: 1rem;">Will you be my Valentine?</h2>
+            <button class="btn-yes" id="yesBtn">Yes! 💖</button>
+        </article>
+
+        <article id="screen3" class="card hidden fade-in">
+            <h1>Yay! You're mine! 🎉</h1>
+            <p>No take-backs allowed now.</p>
+            
+            <img 
+                src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z5Z3Z5Z3Z5Z3Z5Z3Z5Z3Z5Z3Z5Z3Z5Z3Z5Z3Z5Z3Z5/26BRv0ThflsKCqLXG/giphy.gif" 
+                alt="Happy Couple GIF" 
+                class="success-img"
+            >
+        </article>
+    </main>
+
+    <script>
+        // --- CONFIGURATION ---
+        const messages = {
+            low: "That low? You're breaking my heart 💔 Try again!", // 0-40
+            mid: "Getting warmer... but not enough 🤔",              // 41-70
+            high: "Almost there! Don't be shy now 😊",               // 71-89
+        };
+
+        // --- DOM ELEMENTS ---
+        const slider = document.getElementById('loveSlider');
+        const percentageDisplay = document.getElementById('percentageDisplay');
+        const statusMessage = document.getElementById('statusMessage');
+        const screen1 = document.getElementById('screen1');
+        const screen2 = document.getElementById('screen2');
+        const screen3 = document.getElementById('screen3');
+        const yesBtn = document.getElementById('yesBtn');
+        const heartsContainer = document.getElementById('heartsContainer');
+
+        // --- STATE MANAGEMENT ---
+        let proposalTriggered = false;
+
+        // --- FLOATING HEARTS GENERATOR ---
+        function createHearts() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            heart.innerHTML = '❤️'; // Can be swapped for 💖, 💘, etc.
+            
+            // Randomize position and animation properties
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 5 + 10 + 's'; // 10-15s duration
+            heart.style.fontSize = Math.random() * 1 + 0.5 + 'rem'; // Random size
+            
+            heartsContainer.appendChild(heart);
+
+            // Cleanup to prevent memory leaks
+            setTimeout(() => {
+                heart.remove();
+            }, 15000);
+        }
+
+        // Spawn a heart every 500ms
+        setInterval(createHearts, 500);
+
+        // --- SLIDER LOGIC ---
+        slider.addEventListener('input', (e) => {
+            if (proposalTriggered) return;
+
+            const val = parseInt(e.target.value);
+            percentageDisplay.textContent = val + '%';
+
+            // 1. Dynamic Glow Effect
+            // Intensity increases with value. 
+            // Color shifts slightly from purple glow to strong pink glow
+            const glowOpacity = val / 100; 
+            slider.style.boxShadow = `0 0 ${val * 0.5}px rgba(255, 107, 157, ${glowOpacity})`;
+
+            // 2. Message Logic
+            if (val < 41) {
+                statusMessage.textContent = messages.low;
+            } else if (val < 71) {
+                statusMessage.textContent = messages.mid;
+            } else if (val < 90) {
+                statusMessage.textContent = messages.high;
+            } else {
+                // 3. Trigger Proposal
+                triggerProposal();
+            }
+        });
+
+        function triggerProposal() {
+            proposalTriggered = true;
+            slider.disabled = true; // Lock slider
+            
+            // Celebration Confetti
+            fireConfetti();
+
+            // Screen Transition
+            setTimeout(() => {
+                screen1.classList.add('hidden');
+                screen2.classList.remove('hidden');
+            }, 600); // Slight delay for user to realize they hit 100
+        }
+
+        // --- PROPOSAL ACCEPTANCE ---
+        yesBtn.addEventListener('click', () => {
+            // More Confetti!
+            fireConfetti();
+            
+            // Transition to Success
+            screen2.classList.add('hidden');
+            screen3.classList.remove('hidden');
+
+            // Burst confetti periodically on success screen
+            let end = Date.now() + 3000;
+            let colors = ['#FF6B9D', '#FFC857', '#ffffff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        });
+
+        // --- CONFETTI FUNCTION ---
+        function fireConfetti() {
+            const count = 200;
+            const defaults = {
+                origin: { y: 0.7 }
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 55, });
+            fire(0.2, { spread: 60, });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45, });
+        }
+    </script>
+</body>
+</html>

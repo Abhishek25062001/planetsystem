@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A playful Valentine's Day Love Meter - Will you be my Valentine?">
+    <meta property="og:title" content="Love Meter 💕">
+    <meta property="og:description" content="Find out how much you love me...">
+    <meta property="og:type" content="website">
+    <title>Love Meter 💕</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #1A0E1F;
+            --bg-secondary: #2A1A2E;
+            --accent-primary: #FF6B9D;
+            --accent-secondary: #FFC857;
+            --text-primary: #FFF5F7;
+            --text-secondary: #C8B8DB;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            animation: gradientShift 10s ease infinite alternate;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            }
+
+            100% {
+                background: linear-gradient(135deg, #2A1A2E 0%, #1A0E1F 100%);
+            }
+        }
+
+        /* Floating Hearts Background */
+        .hearts-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: clamp(20px, 3vw, 40px);
+            opacity: 0;
+            animation: floatHeart 15s infinite ease-in;
+        }
+
+        @keyframes floatHeart {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.6;
+            }
+
+            90% {
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main Container */
+        main {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Screen 1: Slider */
+        .slider-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtext {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-weight: 400;
+        }
+
+        .percentage-display {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--accent-primary);
+            text-shadow: 0 0 20px rgba(255, 107, 157, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .slider-wrapper {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 44px;
+            background: transparent;
+            cursor: pointer;
+            margin: 1rem 0;
+        }
+
+        input[type="range"]::-webkit-slider-track {
+            width: 100%;
+            height: 12px;
+            background: linear-gradient(to right,
+                    rgba(255, 107, 157, 0.3) 0%,
+                    var(--accent-primary) var(--slider-value, 50%),
+                    rgba(255, 255, 255, 0.1) var(--slider-value, 50%));
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 30px;
+            height: 30px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px rgba(255, 107, 157, 1);
+        }
+
+        input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.8);
+        }
+
+        .feedback-message {
+            min-height: 60px;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            color: var(--text-secondary);
+            margin-top: 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        /* Screen 2: Proposal */
+        .proposal-container {
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .proposal-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: clamp(2rem, 5vw, 4rem);
+            border: 2px solid rgba(255, 107, 157, 0.3);
+            box-shadow: 0 20px 60px rgba(255, 107, 157, 0.2);
+            animation: cardAppear 0.6s ease;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .proposal-question {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin: 2rem 0;
+            color: var(--accent-primary);
+        }
+
+        .yes-button {
+            background: linear-gradient(135deg, var(--accent-primary), #FF8FB9);
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.4);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .yes-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(255, 107, 157, 0.6);
+        }
+
+        .yes-button:active {
+            transform: scale(1.05);
+        }
+
+        /* Screen 3: Success */
+        .success-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .success-message {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .success-subtext {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            color: var(--text-secondary);
+            margin-top: 1rem;
+        }
+
+        .celebration-emoji {
+            font-size: clamp(4rem, 10vw, 8rem);
+            margin: 2rem 0;
+            display: inline-block;
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 640px) {
+            .slider-wrapper {
+                padding: 1.5rem;
+            }
+
+            .proposal-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .yes-button {
+                padding: 1rem 2rem;
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        /* Accessibility */
+        *:focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Floating Hearts Background -->
+    <div class="hearts-container" id="heartsContainer"></div>
+
+    <main>
+        <!-- Screen 1: Love Meter Slider -->
+        <section id="screen1" class="screen active">
+            <div class="slider-container">
+                <h1>How much do you love me? 💕</h1>
+                <p class="subtext">Be honest... or try to be 😏</p>
+
+                <div class="percentage-display" id="percentageDisplay">50%</div>
+
+                <div class="slider-wrapper">
+                    <input type="range" id="loveSlider" min="0" max="100" value="50" aria-label="Love meter slider"
+                        aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+                </div>
+
+                <div class="feedback-message" id="feedbackMessage">
+                    Move the slider to show your love! 💖
+                </div>
+            </div>
+        </section>
+
+        <!-- Screen 2: Proposal -->
+        <section id="screen2" class="screen">
+            <div class="proposal-container">
+                <h1>I knew it! So... one more thing ❤️</h1>
+                <div class="proposal-card">
+                    <div class="celebration-emoji">💝</div>
+                    <h2 class="proposal-question">Will you be my Valentine?</h2>
+                    <button class="yes-button" id="yesButton">Yes! 💖</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screen 3: Success -->
+        <section id="screen3" class="screen">
+            <div class="success-container">
+                <div class="celebration-emoji">🎉</div>
+                <h1 class="success-message">Yay! You're mine now 🎉</h1>
+                <p class="success-subtext">This Valentine's Day is going to be amazing! 💕</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // State Management
+        let currentScreen = 1;
+        let sliderValue = 50;
+
+        // DOM Elements
+        const slider = document.getElementById('loveSlider');
+        const percentageDisplay = document.getElementById('percentageDisplay');
+        const feedbackMessage = document.getElementById('feedbackMessage');
+        const screen1 = document.getElementById('screen1');
+        const screen2 = document.getElementById('screen2');
+        const screen3 = document.getElementById('screen3');
+        const yesButton = document.getElementById('yesButton');
+        const heartsContainer = document.getElementById('heartsContainer');
+
+        // Initialize floating hearts
+        function createFloatingHearts(count = 15) {
+            for (let i = 0; i < count; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.textContent = '💕';
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDelay = Math.random() * 15 + 's';
+                heart.style.animationDuration = (15 + Math.random() * 10) + 's';
+                heartsContainer.appendChild(heart);
+            }
+        }
+
+        // Update slider visual
+        function updateSliderVisual(value) {
+            slider.style.setProperty('--slider-value', value + '%');
+        }
+
+        // Get feedback message based on slider value
+        function getFeedbackMessage(value) {
+            if (value >= 0 && value <= 40) {
+                return "That low? You're breaking my heart 💔 Try again!";
+            } else if (value >= 41 && value <= 70) {
+                return "Getting warmer... but not enough 🤔";
+            } else if (value >= 71 && value <= 89) {
+                return "Almost there! Don't be shy now 😊";
+            } else {
+                return "Perfect! 🌟";
+            }
+        }
+
+        // Update percentage display glow based on value
+        function updatePercentageGlow(value) {
+            const glowIntensity = value / 100;
+            percentageDisplay.style.textShadow = `0 0 ${20 + glowIntensity * 30}px rgba(255, 107, 157, ${0.5 + glowIntensity * 0.5})`;
+        }
+
+        // Trigger confetti
+        function triggerConfetti() {
+            const duration = 3000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function () {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+
+                confetti({
+                    ...defaults,
+                    particleCount,
+                    origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+                    colors: ['#FF6B9D', '#FFC857', '#FFF5F7', '#C8B8DB']
+                });
+                confetti({
+                    ...defaults,
+                    particleCount,
+                    origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+                    colors: ['#FF6B9D', '#FFC857', '#FFF5F7', '#C8B8DB']
+                });
+            }, 250);
+        }
+
+        // Switch screens
+        function switchScreen(screenNumber) {
+            screen1.classList.remove('active');
+            screen2.classList.remove('active');
+            screen3.classList.remove('active');
+
+            if (screenNumber === 1) {
+                screen1.classList.add('active');
+            } else if (screenNumber === 2) {
+                screen2.classList.add('active');
+            } else if (screenNumber === 3) {
+                screen3.classList.add('active');
+            }
+
+            currentScreen = screenNumber;
+        }
+
+        // Slider input handler
+        slider.addEventListener('input', function (e) {
+            sliderValue = parseInt(e.target.value);
+            percentageDisplay.textContent = sliderValue + '%';
+            feedbackMessage.textContent = getFeedbackMessage(sliderValue);
+            updateSliderVisual(sliderValue);
+            updatePercentageGlow(sliderValue);
+            slider.setAttribute('aria-valuenow', sliderValue);
+
+            // Unlock proposal screen at 90%+
+            if (sliderValue >= 90 && currentScreen === 1) {
+                setTimeout(() => {
+                    triggerConfetti();
+                    switchScreen(2);
+                }, 500);
+            }
+        });
+
+        // Yes button handler
+        yesButton.addEventListener('click', function () {
+            triggerConfetti();
+            switchScreen(3);
+            // Intensify hearts
+            createFloatingHearts(20);
+        });
+
+        // Initialize
+        createFloatingHearts();
+        updateSliderVisual(50);
+        updatePercentageGlow(50);
+    </script>
+</body>
+
+</html>

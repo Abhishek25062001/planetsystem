@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine? 🌹</title>
+    
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        'glass-bg': 'rgba(255, 255, 255, 0.35)',
+                        'glass-border': 'rgba(255, 255, 255, 0.8)',
+                        'brand-pink': '#FF4757',
+                        'brand-dark': '#2F3542',
+                    },
+                    animation: {
+                        'marquee': 'marquee 25s linear infinite',
+                        'marquee-reverse': 'marqueeReverse 25s linear infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(0%)' },
+                            '100%': { transform: 'translateX(-100%)' },
+                        },
+                        marqueeReverse: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(0%)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Base Settings */
+        body {
+            background: linear-gradient(135deg, #FFD1DC, #FFF0F5, #E0F7FA);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden; /* Lock scroll */
+            cursor: none; /* Custom cursor */
+            height: 100vh;
+            width: 100vw;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            
+        }
+
+        /* The Infinity Marquee Background */
+        .marquee-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 0;
+            pointer-events: none; /* Background shouldn't block clicks */
+            z-index: 0;
+            opacity: 0.15; /* Subtle background */
+        }
+        
+        .marquee-row {
+            display: flex;
+            width: 200%; /* Ensure continuous flow */
+            white-space: nowrap;
+        }
+
+        .marquee-text {
+            font-size: 4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #FF4757;
+            padding-right: 50px;
+        }
+
+        /* Custom Cursor */
+        .cursor-follower {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            background: #FF4757;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, opacity 0.2s;
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.4);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body { cursor: auto; }
+            .cursor-follower { display: none; }
+            .marquee-text { font-size: 2rem; }
+            /* Better button containment on mobile */
+            .btn-group { flex-direction: column; width: 100%; }
+        }
+
+        /* Shake Animation for "No" */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head><body class="flex items-center justify-center relative">
+
+    <div class="marquee-container">
+        <div class="marquee-row animate-marquee">
+            <span class="marquee-text">Rose Day 🌹 Propose Day 💍 Chocolate Day 🍫 Teddy Day 🧸 Promise Day 🤞 Hug Day 🤗 Kiss Day 💋 Valentine's Day 💖</span>
+            <span class="marquee-text">Rose Day 🌹 Propose Day 💍 Chocolate Day 🍫 Teddy Day 🧸 Promise Day 🤞 Hug Day 🤗 Kiss Day 💋 Valentine's Day 💖</span>
+        </div>
+        
+        <div class="marquee-row animate-marquee-reverse opacity-50 my-auto">
+            <span class="marquee-text" style="font-size: 3rem;">Love You 💖 Forever 💍 Be Mine 🌹 Soulmate ✨</span>
+            <span class="marquee-text" style="font-size: 3rem;">Love You 💖 Forever 💍 Be Mine 🌹 Soulmate ✨</span>
+        </div>
+
+        <div class="marquee-row animate-marquee">
+             <span class="marquee-text">Rose Day 🌹 Propose Day 💍 Chocolate Day 🍫 Teddy Day 🧸 Promise Day 🤞 Hug Day 🤗 Kiss Day 💋 Valentine's Day 💖</span>
+             <span class="marquee-text">Rose Day 🌹 Propose Day 💍 Chocolate Day 🍫 Teddy Day 🧸 Promise Day 🤞 Hug Day 🤗 Kiss Day 💋 Valentine's Day 💖</span>
+        </div>
+    </div>
+
+    <div id="cursor" class="cursor-follower"></div>
+
+    <div class="relative z-10 w-full max-w-3xl">
+        <div id="main-card" class="glass-card rounded-3xl p-6 md:p-10 text-center animate-float shadow-2xl transition-all duration-500">
+            
+            <div id="proposal-content">
+                <div class="mb-6 relative inline-block">
+                    <div class="absolute inset-0 bg-brand-pink blur-2xl opacity-20 rounded-full animate-pulse-slow"></div>
+                    <i class="fa-solid fa-heart text-6xl text-brand-pink drop-shadow-xl relative z-10"></i>
+                </div>
+                
+                <h1 class="text-3xl md:text-5xl font-extrabold text-brand-dark mb-3 leading-tight tracking-tight">
+                    Will you be my <br><span class="text-brand-pink">Valentine?</span> 🌹
+                </h1>
+                
+                <p class="text-gray-600 text-base md:text-lg font-medium mb-8">
+                    Soch lo, offer limited time ke liye hai! ⏳
+                </p>
+
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-center relative min-h-[120px]">
+                    
+                    <button id="yes-btn" class="interactive-btn bg-brand-pink text-white font-bold text-lg py-3 px-10 rounded-full shadow-lg hover:bg-[#ff2e43] hover:shadow-brand-pink/50 transition-all duration-300 transform z-20 whitespace-nowrap">
+                        YES! 🥰
+                    </button>
+
+                    <button id="no-btn" class="interactive-btn bg-white text-gray-500 font-semibold text-lg py-3 px-8 rounded-full border-2 border-gray-200 hover:bg-gray-50 hover:text-red-500 transition-all duration-200 z-10">
+                        No 😢
+                    </button>
+                </div>
+            </div>
+
+            <div id="success-content" class="hidden transform scale-95 opacity-0 transition-all duration-500">
+                <div class="mb-6 animate-bounce">
+                    <i class="fa-solid fa-gift text-6xl text-purple-500 drop-shadow-md"></i>
+                </div>
+                
+                <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-4 leading-tight">
+                    LESSSGOOO! 🎉💖
+                </h1>
+                
+                <p class="text-gray-700 text-lg md:text-xl font-medium mb-8 leading-relaxed">
+                    Maan gaye finally! <br> 
+                    <span class="font-bold text-gray-900">Scene set hai! CP mein milte hain. 🏛️🥟</span>
+                </p>
+
+                <button id="whatsapp-btn" class="interactive-btn bg-[#25D366] text-white font-bold text-lg py-4 px-8 rounded-full shadow-xl hover:bg-[#128C7E] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 w-full md:w-auto mx-auto group">
+                    <i class="fa-brands fa-whatsapp text-2xl group-hover:rotate-12 transition-transform"></i>
+                    Send Confirmation
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Elements ---
+        const yesBtn = document.getElementById('yes-btn');
+        const noBtn = document.getElementById('no-btn');
+        const proposalContent = document.getElementById('proposal-content');
+        const successContent = document.getElementById('success-content');
+        const mainCard = document.getElementById('main-card');
+        const whatsappBtn = document.getElementById('whatsapp-btn');
+
+        // --- Delhi Humor Data ---
+        const rejectionTexts = [
+            "Arre, pakka?",          // Really?
+            "Socho phir se! 🥟",     // Think again (with momos)
+            "Metro card dunga! 💳",  // I'll give you my Metro card
+            "Mummy ko bol dunga! 🥺",// I'll tell mom
+            "Dil tod diya 💔",       // Heartbroken
+            "Ab toh haan bol do!"    // Just say yes now
+        ];
+
+        let clickCount = 0;
+        let currentScale = 1;
+
+        // --- LOGIC: The Trap ("No" Button) ---
+        noBtn.addEventListener('click', () => {
+            // 1. Change Text
+            noBtn.innerText = rejectionTexts[clickCount % rejectionTexts.length];
+            clickCount++;
+
+            // 2. Shake Effect
+            noBtn.classList.add('shake');
+            setTimeout(() => noBtn.classList.remove('shake'), 500);
+
+            // 3. GROW the Yes Button (Responsive Logic)
+            currentScale += 0.4; // Increment scale
+            
+            // Apply scale
+            yesBtn.style.transform = `scale(${currentScale})`;
+            
+            // If it gets too big on mobile, we adjust z-index to ensure it overlaps everything
+            if(currentScale > 2) {
+                yesBtn.style.zIndex = "100";
+                yesBtn.style.position = "absolute"; // Detach from flow to cover screen
+            }
+        });
+
+        // --- LOGIC: The Celebration ("Yes" Button) ---
+        yesBtn.addEventListener('click', () => {
+            triggerGrandConfetti();
+            
+            // Hide Proposal, Show Success
+            proposalContent.style.display = 'none';
+            successContent.classList.remove('hidden');
+            
+            // Small delay for smooth fade-in
+            setTimeout(() => {
+                successContent.classList.remove('scale-95', 'opacity-0');
+                successContent.classList.add('scale-100', 'opacity-100');
+            }, 50);
+        });
+
+        // --- WhatsApp Logic ---
+        whatsappBtn.addEventListener('click', () => {
+            const message = "Haan baba haan, I'll be your Valentine! 🥟💖 Scene set hai! 🏛️";
+            const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        });
+
+        // --- ANIMATION: Grand Confetti ---
+        function triggerGrandConfetti() {
+            // 1. School Pride Effect (Side Cannons)
+            const end = Date.now() + 15 * 1000;
+
+            // Go crazy with colors
+            const colors = ['#ff4757', '#ffffff', '#ffeb3b'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+            // 2. Center Burst
+            setTimeout(() => {
+                confetti({
+                    particleCount: 150,
+                    spread: 100,
+                    origin: { y: 0.6 },
+                    zIndex: 9999
+                });
+            }, 200);
+        }
+
+        // --- CUSTOM CURSOR LOGIC ---
+        const cursor = document.getElementById('cursor');
+        
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            const speed = 0.15;
+            cursorX += (mouseX - cursorX) * speed;
+            cursorY += (mouseY - cursorY) * speed;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+
+        // Only run cursor logic on desktop
+        if (window.matchMedia("(pointer: fine)").matches) {
+            animateCursor();
+            
+            // Hover states
+            document.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    cursor.style.width = '50px';
+                    cursor.style.height = '50px';
+                    cursor.style.opacity = '0.5';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    cursor.style.width = '24px';
+                    cursor.style.height = '24px';
+                    cursor.style.opacity = '1';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
