@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -64,9 +64,8 @@
 
         .glass-card {
             position: absolute;
-            top: 50%;
-            right: 10%;
-            /* Moved to right to balance composition */
+            top: 20%;
+            right: 2%;
             transform: translateY(-50%);
             background: var(--glass);
             backdrop-filter: blur(15px);
@@ -74,7 +73,7 @@
             padding: 40px;
             text-align: left;
             z-index: 5;
-            width: 320px;
+            width: 200px;
             border-radius: 8px;
             box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
         }
@@ -151,7 +150,62 @@
             z-index: 100;
             transition: opacity 1s;
         }
+
+        /* ALIEN INFO HUD */
+        @font-face {
+            font-family: 'AlienFont';
+            src: url('https://fonts.gstatic.com/s/creepster/v13/AlZy_zVUqJz4yMrniH4Rcn35.woff2') format('woff2');
+        }
+
+        #alien-hud {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 20;
+        }
+
+        #alien-hud h1 {
+            font-family: 'AlienFont', cursive;
+            font-size: 5rem;
+            color: #262626;
+            text-shadow: 0 0 20px #cec7c7;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        #alien-hud p {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: #fff;
+            text-shadow: 0 0 10px #fff;
+        }
+
+        #input_video {
+            display: block;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 240px;
+            height: auto;
+            transform: scaleX(-1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            z-index: 100;
+            opacity: 0.6;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -159,6 +213,13 @@
     <div id="loader">
         <h1>INITIALIZING VORTEX...</h1>
     </div>
+
+    <div id="alien-hud">
+        <h1 id="alien-title">UNKNOWN</h1>
+        <p id="alien-desc">AWAITING INPUT...</p>
+    </div>
+
+    <video id="input_video"></video>
 
     <div id="hud">
         <div class="telemetry-row"><span class="t-label">VELOCITY</span> <span>220 KM/S</span></div>
@@ -168,7 +229,7 @@
         <div id="planet-list"></div>
     </div>
 
-    <!-- <div class="glass-card">
+    <div class="glass-card">
         <h1>NOVA</h1>
         <p>SECURE ACCESS TERMINAL<br>VORTEX PROTOCOL: ACTIVE</p>
         <div class="input-group">
@@ -178,7 +239,7 @@
             <input type="password" placeholder="ENCRYPTION_TOKEN">
         </div>
         <button>LAUNCH</button>
-    </div> -->
+    </div>
     <div class="glass-card">
         <h1>Abhishek</h1>
         <p>8750892993<br>Aj956087@gmail.com</p>
@@ -202,6 +263,14 @@
         let sun;
         let planetSystems = []; // Stores mesh + trail logic
         let stars;
+
+        // Camera & Focus State
+        let focusedSystem = null; // null or planetSystem object or 'SUN'
+        let defaultCamPos = new THREE.Vector3(0, 40, 180);
+        let defaultLookAt = new THREE.Vector3(20, 0, 0);
+        let targetCamPos = new THREE.Vector3(0, 40, 180);
+        let targetLookAt = new THREE.Vector3(20, 0, 0);
+        let currentLookAt = new THREE.Vector3(20, 0, 0); // For smooth lookAt interpolation
 
         function init() {
             scene = new THREE.Scene();
@@ -314,8 +383,6 @@
             // 2. PLANET ORBITS & TRAIL LOGIC
             planetSystems.forEach(sys => {
                 // A. Update Planet Position
-                // Orbit Center is the Sun's X (60). 
-                // We keep the Sun "static" in X for the camera, but the trails move back.
                 sys.angle += sys.data.speed;
 
                 const sunX = 60;
@@ -352,6 +419,33 @@
                 sys.trail.geometry.attributes.position.needsUpdate = true;
             });
 
+            // 3. CAMERA SMOOTHING logic
+            // Update targets if focused on a moving object
+            if (focusedSystem && focusedSystem !== 'SUN') {
+                // Follow the planet
+                // Camera Offset: slightly above and behind (relative to movement or sun?)
+                // Let's position camera relative to planet
+                const pPos = focusedSystem.mesh.position;
+                targetLookAt.copy(pPos);
+
+                // Offset: Adjusted for planet size
+                targetCamPos.set(pPos.x - 30, pPos.y + 10, pPos.z + 30);
+            } else if (focusedSystem === 'SUN') {
+                targetLookAt.set(60, 0, 0);
+                targetCamPos.set(0, 0, 100); // Close up to Sun
+            } else {
+                // Reset
+                targetLookAt.copy(defaultLookAt);
+                targetCamPos.copy(defaultCamPos);
+            }
+
+            // Lerp Camera Position
+            camera.position.lerp(targetCamPos, 0.05);
+
+            // Lerp LookAt (manual vector lerp)
+            currentLookAt.lerp(targetLookAt, 0.05);
+            camera.lookAt(currentLookAt);
+
             renderer.render(scene, camera);
         }
 
@@ -362,6 +456,725 @@
         });
 
         init();
+
+        // --- MEDIAPIPE HANDS LOGIC ---
+        const videoElement = document.getElementById('input_video');
+        const alienHud = document.getElementById('alien-hud');
+        const alienTitle = document.getElementById('alien-title');
+        const alienDesc = document.getElementById('alien-desc');
+
+        let currentGesture = -1; // -1: None, 0-5: Fingers
+        let gestureStabilityCounter = 0;
+        let lastStableGesture = -1;
+        const GESTURE_MAP = {
+            0: { name: "THE SUN", desc: "STAR TYPE: G-VAR DWARF<br>TEMP: 5778 K", targetParams: { target: 'SUN' } },
+            1: { name: "EARTH", desc: "HABITABLE ZONE<br>POPULATION: 8B+", targetParams: { target: 'PLANET', index: 2 } },
+            2: { name: "SATURN", desc: "GAS GIANT<br>RINGS: PROMINENT", targetParams: { target: 'PLANET', index: 5 } },
+            3: { name: "JUPITER", desc: "GAS GIANT<br>MASS: 318 EARTHS", targetParams: { target: 'PLANET', index: 4 } },
+            4: { name: "MARS", desc: "RED PLANET<br>ATMOSPHERE: CO2", targetParams: { target: 'PLANET', index: 3 } },
+            5: { name: "VENUS", desc: "TOXIC ATMOSPHERE<br>TEMP: 737 K", targetParams: { target: 'PLANET', index: 1 } }
+        };
+
+        function onResults(results) {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const fingers = countFingers(landmarks);
+
+                if (fingers === currentGesture) {
+                    gestureStabilityCounter++;
+                } else {
+                    currentGesture = fingers;
+                    gestureStabilityCounter = 0;
+                }
+
+                if (gestureStabilityCounter > 10) { // Stable for ~10 frames
+                    if (lastStableGesture !== currentGesture) {
+                        lastStableGesture = currentGesture;
+                        triggerAction(currentGesture);
+                    }
+                }
+            } else {
+                gestureStabilityCounter = 0;
+                // Optional: lastStableGesture = -1; // Reset if hand lost? or keep state?
+            }
+        }
+
+        function countFingers(lm) {
+            // Finger Tips: 8, 12, 16, 20
+            // Finger PIP: 6, 10, 14, 18
+            // Thumb: Tip 4, IP 3 (Checking X for handedness or simple dist logic)
+
+            let count = 0;
+
+            // Thumb: Compare tip.x to ip.x (Assuming right hand for now, need robust check or simple y check)
+            // Robust Thumb: Check if Tip is "farther out" than IP relative to base? 
+            // Simple heuristic: distance from wrist(0) to tip(4) > distance from wrist(0) to ip(3)?
+            // Better: x-coord comparison works if hand is upright.
+            // Let's use checking if valid fingers are extended.
+
+            // 1. Index (8 vs 6) - Y axis (Up is lower value in normalized coord? No, 0 is top)
+            // Top left is 0,0. So Lower Y is Higher visual.
+            if (lm[8].y < lm[6].y) count++; // Index Up
+            if (lm[12].y < lm[10].y) count++; // Middle Up
+            if (lm[16].y < lm[14].y) count++; // Ring Up
+            if (lm[20].y < lm[18].y) count++; // Pinky Up
+
+            // Thumb is tricky. Let's say if tip.x is further from pinky.x than ip.x?
+            // Simple: distance from node 4 to node 17 (pinky base). If huge, extended.
+            // Or just check if 4.x is outside palm logic.
+            // Let's try: if distance(4, 17) > distance(3, 17) ?
+            const dist = (p1, p2) => Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+            if (dist(lm[4], lm[17]) > dist(lm[3], lm[17]) + 0.05) { // Threshold
+                // Thumb extended
+                // Wait, for "0" (Fist), user wants thumb in.
+                // If thumb is out, it might be 5.
+                count++;
+            }
+            // Logic fix: 
+            // 4 fingers check is stable. 
+            // Thumb check needs to be accurate for "5" vs "4".
+            // If Thumb is "in", count is based on others.
+
+            return count;
+        }
+
+        function triggerAction(gestureId) {
+            console.log("TRIGGER GESTURE:", gestureId);
+            const data = GESTURE_MAP[gestureId];
+
+            if (data) {
+                // UI Update
+                alienTitle.innerText = data.name;
+                alienDesc.innerHTML = data.desc;
+                alienHud.style.opacity = '1';
+
+                // 3D Scene Update
+                handleSceneFocus(data.targetParams);
+            } else {
+                alienHud.style.opacity = '0';
+                handleSceneFocus(null); // Reset
+            }
+        }
+
+        function handleSceneFocus(params) {
+            if (!params) {
+                focusedSystem = null;
+                // Reset Sun
+                if (sun) {
+                    sun.scale.set(1, 1, 1);
+                    sun.material.color.setHex(0xffaa00);
+                }
+                // Reset Planets
+                planetSystems.forEach(sys => {
+                    sys.mesh.scale.set(1, 1, 1);
+                    sys.mesh.material.emissive.setHex(0x000000);
+                });
+                return;
+            }
+
+            if (params.target === 'SUN') {
+                focusedSystem = 'SUN';
+                if (sun) {
+                    sun.scale.set(1.5, 1.5, 1.5);
+                    sun.material.color.setHex(0xff2200); // More Red
+                }
+            } else if (params.target === 'PLANET') {
+                focusedSystem = planetSystems[params.index];
+
+                // Highlight specific planet
+                planetSystems.forEach((sys, i) => {
+                    if (i === params.index) {
+                        sys.mesh.scale.set(1.5, 1.5, 1.5);
+                        sys.mesh.material.emissive.setHex(0xaaaaaa);
+                    } else {
+                        sys.mesh.scale.set(1, 1, 1);
+                        sys.mesh.material.emissive.setHex(0x000000);
+                    }
+                });
+
+                // Reset Sun visual
+                if (sun) {
+                    sun.scale.set(1, 1, 1);
+                    sun.material.color.setHex(0xffaa00);
+                }
+            }
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+        hands.onResults(onResults);
+
+        const videoCamera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720
+        });
+        videoCamera.start();
+    </script>
+</body>
+
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA SYSTEMS | Helical Drive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --glow: #ffaa00;
+            --glass: rgba(255, 255, 255, 0.05);
+            --hud-bg: rgba(10, 10, 15, 0.85);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030305;
+            font-family: 'Orbitron', sans-serif;
+            /* Aerospace Font everywhere */
+            color: white;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* UPDATED HUD STYLE */
+        #hud {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 320px;
+            background: var(--hud-bg);
+            border-left: 4px solid var(--glow);
+            padding: 25px;
+            font-family: 'Orbitron', sans-serif;
+            /* Aerospace Font */
+            font-size: 12px;
+            letter-spacing: 2px;
+            /* Spacing for tech look */
+            pointer-events: auto;
+            /* Allow clicking reset button */
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+            color: #ccc;
+        }
+
+        .t-label {
+            color: var(--glow);
+            font-weight: bold;
+        }
+
+        /* NEW RESET BUTTON */
+        #reset-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 170, 0, 0.2);
+            border: 1px solid var(--glow);
+            color: var(--glow);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+
+        #reset-btn:hover {
+            background: var(--glow);
+            color: #000;
+            box-shadow: 0 0 15px var(--glow);
+        }
+
+        /* Glass Cards (Right Side) */
+        .glass-card {
+            position: absolute;
+            bottom: 0%;
+            right: 2%;
+            transform: translateY(-50%);
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+
+            text-align: left;
+            z-index: 5;
+            width: 250px;
+            border-radius: 0px 20px 0px 20px;
+            /* Tech shape */
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            color: white;
+            border-bottom: 2px solid var(--glow);
+            display: inline-block;
+        }
+
+        p {
+            font-size: 0.5rem;
+            line-height: 1.6;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        /* ALIEN HUD / GESTURE FEEDBACK */
+        #alien-hud {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 20;
+        }
+
+        #alien-hud h1 {
+            font-size: 4rem;
+            color: #fff;
+            text-shadow: 0 0 20px var(--glow);
+            margin: 0;
+            letter-spacing: 10px;
+            border: none;
+        }
+
+        #alien-hud p {
+            font-size: 1.2rem;
+            color: var(--glow);
+            letter-spacing: 3px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+        }
+
+        /* Loading */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 1s;
+        }
+
+        #input_video {
+            display: block;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 160px;
+            height: auto;
+            transform: scaleX(-1);
+            border: 1px solid var(--glow);
+            opacity: 0.4;
+            z-index: 100;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <div id="loader">
+        <h1 style="border:none">SYSTEM INITIALIZING...</h1>
+    </div>
+
+    <div id="alien-hud">
+        <h1 id="alien-title">UNKNOWN</h1>
+        <p id="alien-desc">AWAITING INPUT...</p>
+    </div>
+
+    <video id="input_video"></video>
+
+    <div id="hud">
+        <div class="telemetry-row"><span class="t-label">VELOCITY</span> <span>220 KM/S</span></div>
+        <div class="telemetry-row"><span class="t-label">VECTOR</span> <span>GALACTIC CENTER</span></div>
+        <div class="telemetry-row"><span class="t-label">TRAJECTORY</span> <span>HELICAL/STABLE</span></div>
+        <br>
+        <div style="margin-bottom: 10px; color: var(--glow); font-weight:bold;">NEARBY OBJECTS:</div>
+        <div id="planet-list"></div>
+
+        <button id="reset-btn">RESET VIEW</button>
+    </div>
+
+    <div class="glass-card">
+        <h1>ABHISHEK</h1>
+        <p>ID: 8750892993<br>MAIL: Aj956087@gmail.com</p>
+        <p style="font-size: 0.7rem; color: var(--glow);">ACCESS LEVEL: ADMIN</p>
+    </div>
+
+    <script>
+        // CONFIGURATION (Updated Colors)
+        const PLANETS = [
+            { name: "MERCURY", color: 0xAAAAAA, size: 0.8, dist: 14, speed: 0.08 },
+            { name: "VENUS", color: 0xFFD700, size: 1.5, dist: 22, speed: 0.06 },
+            { name: "EARTH", color: 0x0099FF, size: 1.6, dist: 30, speed: 0.05 },
+            { name: "MARS", color: 0xFF4500, size: 1.2, dist: 38, speed: 0.04 },
+            { name: "JUPITER", color: 0xD2691E, size: 4.5, dist: 55, speed: 0.02 },
+            { name: "SATURN", color: 0xC5AB6E, size: 3.8, dist: 75, speed: 0.015 }, // Ring logic handled in loop
+            { name: "URANUS", color: 0x00FFFF, size: 2.5, dist: 90, speed: 0.01 },
+            { name: "NEPTUNE", color: 0x4169E1, size: 2.4, dist: 105, speed: 0.008 }
+        ];
+
+        const SCENE_SPEED = 2.0;
+
+        let scene, camera, renderer;
+        let sun;
+        let planetSystems = [];
+        let stars;
+
+        // Camera State
+        let focusedSystem = null;
+        let defaultCamPos = new THREE.Vector3(0, 40, 180);
+        let defaultLookAt = new THREE.Vector3(20, 0, 0);
+        let targetCamPos = new THREE.Vector3(0, 40, 180);
+        let targetLookAt = new THREE.Vector3(20, 0, 0);
+        let currentLookAt = new THREE.Vector3(20, 0, 0);
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 40, 180);
+            camera.lookAt(20, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            // 1. THE SUN
+            const sunGeo = new THREE.SphereGeometry(10, 64, 64);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+            sun = new THREE.Mesh(sunGeo, sunMat);
+            sun.position.set(60, 0, 0);
+            scene.add(sun);
+
+            // Sun Light
+            const sunLight = new THREE.PointLight(0xffaa00, 2, 400);
+            sunLight.position.set(60, 0, 0);
+            scene.add(sunLight);
+            scene.add(new THREE.AmbientLight(0x404040, 1.5)); // Increased ambient for better colors
+
+            // 2. PLANETS & LIST
+            const list = document.getElementById('planet-list');
+
+            PLANETS.forEach(p => {
+                const group = new THREE.Group();
+                scene.add(group);
+
+                // Planet Mesh
+                const mesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(p.size, 32, 32),
+                    new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.6, metalness: 0.2 })
+                );
+                group.add(mesh);
+
+                // --- FIX 1: SATURN RINGS ---
+                if (p.name === "SATURN") {
+                    const ringGeo = new THREE.RingGeometry(p.size * 1.4, p.size * 2.3, 64);
+                    const ringMat = new THREE.MeshBasicMaterial({
+                        color: 0xAA8866,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const ring = new THREE.Mesh(ringGeo, ringMat);
+                    ring.rotation.x = Math.PI / 2; // Lie flat
+                    ring.rotation.y = 0.2; // Slight tilt
+                    mesh.add(ring); // Attach to planet mesh so it follows
+                }
+
+                // Trail
+                const trailLength = 150;
+                const trailGeo = new THREE.BufferGeometry();
+                const positions = new Float32Array(trailLength * 3);
+                trailGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const trailMat = new THREE.LineBasicMaterial({
+                    color: p.color,
+                    transparent: true,
+                    opacity: 0.4,
+                    blending: THREE.AdditiveBlending
+                });
+                const trailLine = new THREE.Line(trailGeo, trailMat);
+                scene.add(trailLine);
+
+                planetSystems.push({
+                    mesh: mesh,
+                    trail: trailLine,
+                    trailPositions: [],
+                    data: p,
+                    angle: Math.random() * Math.PI * 2
+                });
+
+                // --- FIX 2: PLANET LIST & COLOR HEX ---
+                // .toString(16) removes leading zeros, so we pad it.
+                let hexColor = '#' + p.color.toString(16).padStart(6, '0');
+
+                list.innerHTML += `
+                    <div class="telemetry-row">
+                        <span>${p.name}</span> 
+                        <span style="color:${hexColor}; text-shadow: 0 0 5px ${hexColor}">● ONLINE</span>
+                    </div>`;
+            });
+
+            // 3. STARS
+            const starCount = 3000;
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount * 3; i++) {
+                starPos[i] = (Math.random() - 0.5) * 600;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0.8 });
+            stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+
+            // Hide Loader
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').remove(), 1000);
+            }, 500);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Stars
+            const positions = stars.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i] -= SCENE_SPEED;
+                if (positions[i] < -300) positions[i] = 300;
+            }
+            stars.geometry.attributes.position.needsUpdate = true;
+
+            // Planets
+            planetSystems.forEach(sys => {
+                sys.angle += sys.data.speed;
+                const sunX = 60;
+                const currentX = sunX;
+                const currentY = Math.cos(sys.angle) * sys.data.dist;
+                const currentZ = Math.sin(sys.angle) * sys.data.dist;
+
+                sys.mesh.position.set(currentX, currentY, currentZ);
+                sys.mesh.rotation.y += 0.02;
+
+                // Trail Logic
+                for (let i = 0; i < sys.trailPositions.length; i++) {
+                    sys.trailPositions[i].x -= SCENE_SPEED;
+                }
+                sys.trailPositions.unshift(new THREE.Vector3(currentX, currentY, currentZ));
+                if (sys.trailPositions.length > 200) sys.trailPositions.pop();
+
+                const tPos = sys.trail.geometry.attributes.position.array;
+                for (let i = 0; i < sys.trailPositions.length; i++) {
+                    tPos[i * 3] = sys.trailPositions[i].x;
+                    tPos[i * 3 + 1] = sys.trailPositions[i].y;
+                    tPos[i * 3 + 2] = sys.trailPositions[i].z;
+                }
+                sys.trail.geometry.setDrawRange(0, sys.trailPositions.length);
+                sys.trail.geometry.attributes.position.needsUpdate = true;
+            });
+
+            // Camera Smoothing
+            if (focusedSystem && focusedSystem !== 'SUN') {
+                const pPos = focusedSystem.mesh.position;
+                targetLookAt.copy(pPos);
+                targetCamPos.set(pPos.x - 30, pPos.y + 10, pPos.z + 30);
+            } else if (focusedSystem === 'SUN') {
+                targetLookAt.set(60, 0, 0);
+                targetCamPos.set(0, 0, 100);
+            } else {
+                targetLookAt.copy(defaultLookAt);
+                targetCamPos.copy(defaultCamPos);
+            }
+
+            camera.position.lerp(targetCamPos, 0.05);
+            currentLookAt.lerp(targetLookAt, 0.05);
+            camera.lookAt(currentLookAt);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- FIX 3: RESET BUTTON LOGIC ---
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            triggerAction(-1); // Resets view
+        });
+
+        init();
+
+        // --- HANDS & GESTURE LOGIC ---
+        const videoElement = document.getElementById('input_video');
+        const alienHud = document.getElementById('alien-hud');
+        const alienTitle = document.getElementById('alien-title');
+        const alienDesc = document.getElementById('alien-desc');
+
+        let currentGesture = -1;
+        let gestureStabilityCounter = 0;
+        let lastStableGesture = -1;
+
+        const GESTURE_MAP = {
+            0: { name: "THE SUN", desc: "TYPE: G-VAR DWARF", targetParams: { target: 'SUN' } },
+            1: { name: "EARTH", desc: "HABITABLE ZONE", targetParams: { target: 'PLANET', index: 2 } },
+            2: { name: "SATURN", desc: "SYSTEM: RINGED", targetParams: { target: 'PLANET', index: 5 } },
+            3: { name: "JUPITER", desc: "MASS: 318 EARTHS", targetParams: { target: 'PLANET', index: 4 } },
+            4: { name: "MARS", desc: "ATMOSPHERE: CO2", targetParams: { target: 'PLANET', index: 3 } },
+            5: { name: "VENUS", desc: "TEMP: 737 K", targetParams: { target: 'PLANET', index: 1 } }
+        };
+
+        function onResults(results) {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const fingers = countFingers(landmarks);
+
+                if (fingers === currentGesture) {
+                    gestureStabilityCounter++;
+                } else {
+                    currentGesture = fingers;
+                    gestureStabilityCounter = 0;
+                }
+
+                if (gestureStabilityCounter > 10) {
+                    if (lastStableGesture !== currentGesture) {
+                        lastStableGesture = currentGesture;
+                        triggerAction(currentGesture);
+                    }
+                }
+            }
+        }
+
+        function countFingers(lm) {
+            let count = 0;
+            if (lm[8].y < lm[6].y) count++;
+            if (lm[12].y < lm[10].y) count++;
+            if (lm[16].y < lm[14].y) count++;
+            if (lm[20].y < lm[18].y) count++;
+            const dist = (p1, p2) => Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+            if (dist(lm[4], lm[17]) > dist(lm[3], lm[17]) + 0.05) count++;
+            return count;
+        }
+
+        function triggerAction(gestureId) {
+            const data = GESTURE_MAP[gestureId];
+            if (data) {
+                alienTitle.innerText = data.name;
+                alienDesc.innerHTML = data.desc;
+                alienHud.style.opacity = '1';
+                handleSceneFocus(data.targetParams);
+            } else {
+                alienHud.style.opacity = '0';
+                handleSceneFocus(null);
+            }
+        }
+
+        function handleSceneFocus(params) {
+            if (!params) {
+                focusedSystem = null;
+                if (sun) {
+                    sun.scale.set(1, 1, 1);
+                    sun.material.color.setHex(0xffaa00);
+                }
+                planetSystems.forEach(sys => {
+                    sys.mesh.scale.set(1, 1, 1);
+                    sys.mesh.material.emissive.setHex(0x000000);
+                });
+                return;
+            }
+
+            if (params.target === 'SUN') {
+                focusedSystem = 'SUN';
+                if (sun) {
+                    sun.scale.set(1.5, 1.5, 1.5);
+                    sun.material.color.setHex(0xff2200);
+                }
+            } else if (params.target === 'PLANET') {
+                focusedSystem = planetSystems[params.index];
+                planetSystems.forEach((sys, i) => {
+                    if (i === params.index) {
+                        sys.mesh.scale.set(1.5, 1.5, 1.5);
+                        sys.mesh.material.emissive.setHex(0xaaaaaa);
+                    } else {
+                        sys.mesh.scale.set(1, 1, 1);
+                        sys.mesh.material.emissive.setHex(0x000000);
+                    }
+                });
+            }
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+        hands.onResults(onResults);
+
+        const videoCamera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720
+        });
+        videoCamera.start();
     </script>
 </body>
 

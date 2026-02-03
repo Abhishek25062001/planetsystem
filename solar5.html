@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA SYSTEMS | Dual Core</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --glow: #ffaa00;
+            --cyan: #00f7ff;
+            --hud-bg: rgba(10, 10, 15, 0.85);
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #030305;
+            font-family: 'Orbitron', sans-serif; color: white;
+        }
+
+        /* 3D Canvas Background */
+        #canvas-3d { position: fixed; top: 0; left: 0; z-index: 1; }
+
+        /* --- NEW VIDEO CONTAINER (Aligns Video + Overlay) --- */
+        #input-container {
+            position: absolute;
+            top: 20px; 
+            left: 20px;
+            width: 200px; /* Adjust size of preview here */
+            height: 150px;
+            border: 1px solid #333;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            /* Mirror the whole container so video and drawing match */
+            transform: scaleX(-1); 
+        }
+
+        #input_video {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0.5;
+        }
+
+        #canvas-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        /* HUD STYLES */
+        #hud {
+            position: absolute; bottom: 30px; left: 30px; width: 320px;
+            background: var(--hud-bg); border-left: 4px solid var(--glow);
+            padding: 25px; z-index: 10;
+            backdrop-filter: blur(8px);
+            transition: border-color 0.5s;
+        }
+
+        .mode-solar #hud { border-color: var(--glow); }
+        .mode-neural #hud { border-color: var(--cyan); }
+
+        .telemetry-row {
+            display: flex; justify-content: space-between; margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;
+            color: #ccc; font-size: 12px;
+        }
+
+        /* MODE SWITCHER UI */
+        .system-switch {
+            display: flex; gap: 10px; margin-bottom: 20px;
+        }
+        .switch-btn {
+            flex: 1; padding: 10px; border: 1px solid #333;
+            background: rgba(0,0,0,0.5); color: #555;
+            cursor: pointer; font-family: 'Orbitron'; font-weight: bold;
+            transition: 0.3s;
+        }
+        .switch-btn.active { color: #000; box-shadow: 0 0 15px currentColor; }
+        #btn-solar.active { background: var(--glow); color: black; box-shadow: 0 0 15px var(--glow); }
+        #btn-neural.active { background: var(--cyan); color: black; box-shadow: 0 0 15px var(--cyan); }
+
+        /* ALIEN HUD */
+        #alien-hud {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+            text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.5s; z-index: 20;
+        }
+        #alien-hud h1 {
+            font-size: 3rem; margin: 0; letter-spacing: 8px;
+            text-shadow: 0 0 20px currentColor;
+        }
+        #alien-hud p {
+            font-size: 1rem; background: rgba(0,0,0,0.6);
+            padding: 5px 15px; border-radius: 15px; display: inline-block;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="mode-solar">
+
+    <canvas id="canvas-3d"></canvas>
+
+    <div id="input-container">
+        <video id="input_video"></video>
+        <canvas id="canvas-overlay"></canvas>
+    </div>
+
+    <div id="alien-hud">
+        <h1 id="alien-title">SYSTEM</h1>
+        <p id="alien-desc">STANDBY</p>
+    </div>
+
+    <div id="hud">
+        <div class="system-switch">
+            <button id="btn-solar" class="switch-btn active" onclick="switchMode('SOLAR')">HELICAL DRIVE</button>
+            <button id="btn-neural" class="switch-btn" onclick="switchMode('NEURAL')">NEURAL NEXUS</button>
+        </div>
+
+        <div id="info-panel">
+            <div class="telemetry-row"><span class="t-label">STATUS</span> <span id="sys-status">ONLINE</span></div>
+            <div class="telemetry-row"><span class="t-label">INPUT</span> <span>HAND TRACKING</span></div>
+            <div id="dynamic-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let CURRENT_MODE = 'SOLAR'; 
+        
+        // 3D Setup
+        const canvas3D = document.getElementById('canvas-3d');
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // 2D Overlay Setup (Inside the container)
+        const overlayCanvas = document.getElementById('canvas-overlay');
+        const overlayCtx = overlayCanvas.getContext('2d');
+        
+        // Match canvas resolution to visual size
+        function resizeOverlay() {
+            overlayCanvas.width = overlayCanvas.offsetWidth;
+            overlayCanvas.height = overlayCanvas.offsetHeight;
+        }
+        // Call once on load (and ideally on resize, though fixed pixel size is safer for small preview)
+        resizeOverlay();
+
+
+        // Scene Managers
+        const SolarSystem = { scene: null, camera: null, active: false };
+        const ParticleSystem = { scene: null, camera: null, active: false };
+
+        // --- CORE 1: SOLAR SYSTEM ---
+        function initSolar() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 40, 180);
+            camera.lookAt(20, 0, 0);
+
+            // Sun
+            const sun = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+            sun.position.set(60, 0, 0);
+            scene.add(sun);
+            scene.add(new THREE.PointLight(0xffaa00, 2, 400));
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            // Planets
+            const planets = [];
+            const pData = [
+                { name: "MERCURY", color: 0xAAAAAA, size: 0.8, dist: 14, speed: 0.08 },
+                { name: "VENUS", color: 0xFFD700, size: 1.5, dist: 22, speed: 0.06 },
+                { name: "EARTH", color: 0x0099FF, size: 1.6, dist: 30, speed: 0.05 },
+                { name: "MARS", color: 0xFF4500, size: 1.2, dist: 38, speed: 0.04 },
+                { name: "JUPITER", color: 0xD2691E, size: 4.5, dist: 55, speed: 0.02 },
+                { name: "SATURN", color: 0xC5AB6E, size: 3.8, dist: 75, speed: 0.015 },
+                { name: "URANUS", color: 0x00FFFF, size: 2.5, dist: 90, speed: 0.01 },
+                { name: "NEPTUNE", color: 0x4169E1, size: 2.4, dist: 105, speed: 0.008 }
+            ];
+
+            pData.forEach(p => {
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.size, 16, 16), new THREE.MeshStandardMaterial({ color: p.color }));
+                
+                if(p.name === "SATURN") {
+                    const ring = new THREE.Mesh(
+                        new THREE.RingGeometry(p.size*1.4, p.size*2.3, 32),
+                        new THREE.MeshBasicMaterial({ color: 0xAA8866, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
+                    );
+                    ring.rotation.x = Math.PI/2;
+                    mesh.add(ring);
+                }
+
+                // Trails
+                const trailGeo = new THREE.BufferGeometry();
+                const positions = new Float32Array(150 * 3);
+                trailGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: p.color, transparent: true, opacity: 0.4 }));
+                
+                scene.add(mesh);
+                scene.add(trail);
+                
+                planets.push({ mesh, trail, trailPos: [], data: p, angle: Math.random()*10 });
+            });
+
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(3000 * 3);
+            for(let i=0; i<9000; i++) starPos[i] = (Math.random()-0.5)*600;
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.5}));
+            scene.add(stars);
+
+            SolarSystem.scene = scene;
+            SolarSystem.camera = camera;
+            SolarSystem.objects = { planets, stars, sun };
+        }
+
+        // --- CORE 2: NEURAL NEXUS (PARTICLES) ---
+        function initParticles() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.z = 100;
+
+            // UPDATED: 8000 Particles
+            const particleCount = 8000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const targetPositions = new Float32Array(particleCount * 3);
+
+            const color1 = new THREE.Color(0x00ffff); // Cyan
+            const color2 = new THREE.Color(0xff00ff); // Magenta
+
+            for(let i=0; i<particleCount; i++) {
+                positions[i*3] = (Math.random()-0.5)*200;
+                positions[i*3+1] = (Math.random()-0.5)*200;
+                positions[i*3+2] = (Math.random()-0.5)*200;
+
+                const mixedColor = color1.clone().lerp(color2, Math.random());
+                colors[i*3] = mixedColor.r;
+                colors[i*3+1] = mixedColor.g;
+                colors[i*3+2] = mixedColor.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.6, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8
+            });
+
+            const particleSystem = new THREE.Points(geometry, material);
+            scene.add(particleSystem);
+
+            ParticleSystem.scene = scene;
+            ParticleSystem.camera = camera;
+            ParticleSystem.objects = { mesh: particleSystem, targets: targetPositions, count: particleCount };
+            
+            setParticleShape('SPHERE');
+        }
+
+        // --- NEW SHAPE LOGIC ---
+        function setParticleShape(type) {
+            const { targets, count } = ParticleSystem.objects;
+            const radius = 40;
+
+            for(let i=0; i<count; i++) {
+                let x,y,z;
+                
+                if(type === 'SPHERE') { // 1 Finger
+                    const phi = Math.acos( -1 + ( 2 * i ) / count );
+                    const theta = Math.sqrt( count * Math.PI ) * phi;
+                    x = radius * Math.cos( theta ) * Math.sin( phi );
+                    y = radius * Math.sin( theta ) * Math.sin( phi );
+                    z = radius * Math.cos( phi );
+                
+                } else if (type === 'GALAXY') { // 2 Fingers
+                    const angle = i * 0.05; // Tight spiral
+                    const r = (i / count) * radius * 1.5; 
+                    // Add 3 arms
+                    const armOffset = (i % 3) * (Math.PI * 2 / 3);
+                    x = Math.cos(angle + armOffset) * r;
+                    y = (Math.random()-0.5) * 5; // Flat
+                    z = Math.sin(angle + armOffset) * r;
+
+                } else if (type === 'RING') { // 3 Fingers (TORUS)
+                    const u = (i / count) * Math.PI * 2;
+                    const tubeRadius = 10;
+                    const ringRadius = 40;
+                    // Random scatter inside tube for volume
+                    const v = Math.random() * Math.PI * 2;
+                    x = (ringRadius + tubeRadius * Math.cos(v)) * Math.cos(u);
+                    y = (ringRadius + tubeRadius * Math.cos(v)) * Math.sin(u);
+                    z = tubeRadius * Math.sin(v);
+
+                } else if (type === 'HELIX') { // 4 Fingers (Double Helix)
+                    const t = i * 0.1;
+                    const strand = (i % 2 === 0) ? 1 : -1; // Split into two strands
+                    x = Math.cos(t * 0.5) * 20 + strand * 10;
+                    y = (i / count) * 100 - 50; // Vertical spread
+                    z = Math.sin(t * 0.5) * 20;
+
+                } else if (type === 'EXPLOSION') { // 5 Fingers
+                    x = (Math.random()-0.5) * 300;
+                    y = (Math.random()-0.5) * 300;
+                    z = (Math.random()-0.5) * 300;
+
+                } else { // 0 Fingers (Collapse / Black Hole)
+                    const r = Math.random() * 10; // Tight ball
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    x = r * Math.sin(phi) * Math.cos(theta);
+                    y = r * Math.sin(phi) * Math.sin(theta);
+                    z = r * Math.cos(phi);
+                }
+
+                targets[i*3] = x;
+                targets[i*3+1] = y;
+                targets[i*3+2] = z;
+            }
+        }
+
+        // --- ANIMATION LOOPS ---
+        function updateSolar() {
+            const { planets, stars } = SolarSystem.objects;
+            
+            const sPos = stars.geometry.attributes.position.array;
+            for(let i=0; i<sPos.length; i+=3) {
+                sPos[i] -= 2.0; 
+                if(sPos[i] < -300) sPos[i] = 300;
+            }
+            stars.geometry.attributes.position.needsUpdate = true;
+
+            planets.forEach(sys => {
+                sys.angle += sys.data.speed;
+                const cx = 60;
+                const cy = Math.cos(sys.angle)*sys.data.dist;
+                const cz = Math.sin(sys.angle)*sys.data.dist;
+                sys.mesh.position.set(cx, cy, cz);
+
+                sys.trailPos.forEach(p => p.x -= 2.0);
+                sys.trailPos.unshift(new THREE.Vector3(cx, cy, cz));
+                if(sys.trailPos.length > 100) sys.trailPos.pop();
+
+                const tPos = sys.trail.geometry.attributes.position.array;
+                for(let i=0; i<sys.trailPos.length; i++) {
+                    tPos[i*3] = sys.trailPos[i].x;
+                    tPos[i*3+1] = sys.trailPos[i].y;
+                    tPos[i*3+2] = sys.trailPos[i].z;
+                }
+                sys.trail.geometry.setDrawRange(0, sys.trailPos.length);
+                sys.trail.geometry.attributes.position.needsUpdate = true;
+            });
+            
+            renderer.render(SolarSystem.scene, SolarSystem.camera);
+        }
+
+        function updateParticles(landmarks) {
+            const { mesh, targets, count } = ParticleSystem.objects;
+            const positions = mesh.geometry.attributes.position.array;
+            
+            // Interaction: Rotate based on hand position
+            if(landmarks) {
+                mesh.rotation.y = (landmarks[8].x - 0.5) * 2; 
+                mesh.rotation.x = (landmarks[8].y - 0.5) * 2;
+            } else {
+                mesh.rotation.y += 0.002;
+            }
+
+            for(let i=0; i<count*3; i++) {
+                positions[i] += (targets[i] - positions[i]) * 0.04; // Smooth lerp
+            }
+            mesh.geometry.attributes.position.needsUpdate = true;
+            renderer.render(ParticleSystem.scene, ParticleSystem.camera);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(CURRENT_MODE === 'SOLAR') updateSolar();
+            else updateParticles(currentLandmarks);
+        }
+
+        // --- GESTURE & INPUT ---
+        const alienTitle = document.getElementById('alien-title');
+        const alienDesc = document.getElementById('alien-desc');
+        const alienHud = document.getElementById('alien-hud');
+        let currentLandmarks = null;
+        let lastGesture = -1;
+        let stableFrames = 0;
+
+        function handleGesture(fingers, landmarks) {
+            currentLandmarks = landmarks;
+
+            if (fingers === lastGesture) stableFrames++;
+            else { stableFrames = 0; lastGesture = fingers; }
+
+            if(stableFrames < 5) return;
+
+            const hudColor = CURRENT_MODE === 'SOLAR' ? '#ffaa00' : '#00f7ff';
+            alienTitle.style.color = hudColor;
+
+            if (CURRENT_MODE === 'SOLAR') {
+                const mapping = {
+                    0: { t: "THE SUN", d: "CENTER OF SYSTEM" },
+                    1: { t: "MERCURY", d: "ORBIT: INNER" },
+                    2: { t: "EARTH", d: "HOME WORLD" },
+                    3: { t: "MARS", d: "TARGET: RED" },
+                    4: { t: "JUPITER", d: "GAS GIANT" },
+                    5: { t: "SATURN", d: "RINGS DETECTED" }
+                };
+                if(mapping[fingers]) {
+                    alienTitle.innerText = mapping[fingers].t;
+                    alienDesc.innerText = mapping[fingers].d;
+                    alienHud.style.opacity = 1;
+                }
+            } else {
+                // --- NEW FINGER MAPPINGS FOR NEURAL NEXUS ---
+                const mapping = {
+                    0: { t: "VOID", d: "SINGULARITY", shape: 'COLLAPSE' },
+                    1: { t: "SPHERE", d: "PLANETARY FORM", shape: 'SPHERE' },
+                    2: { t: "GALAXY", d: "SPIRAL NEBULA", shape: 'GALAXY' },
+                    3: { t: "TORUS", d: "MAGNETIC RING", shape: 'RING' }, // New
+                    4: { t: "HELIX", d: "DNA SEQUENCE", shape: 'HELIX' }, // New
+                    5: { t: "EXPAND", d: "ENTROPY MAX", shape: 'EXPLOSION' }
+                };
+
+                if(mapping[fingers]) {
+                    alienTitle.innerText = mapping[fingers].t;
+                    alienDesc.innerText = mapping[fingers].d;
+                    alienHud.style.opacity = 1;
+                    setParticleShape(mapping[fingers].shape);
+                }
+            }
+        }
+
+        function switchMode(mode) {
+            CURRENT_MODE = mode;
+            document.body.className = mode === 'SOLAR' ? 'mode-solar' : 'mode-neural';
+            document.getElementById('btn-solar').classList.toggle('active', mode === 'SOLAR');
+            document.getElementById('btn-neural').classList.toggle('active', mode === 'NEURAL');
+            
+            const list = document.getElementById('dynamic-list');
+            if(mode === 'SOLAR') {
+                 list.innerHTML = '<div style="color:var(--glow)">SOLAR OBJECTS TRACKING...</div>';
+            } else {
+                list.innerHTML = '<div style="color:var(--cyan)">PARTICLE SIMULATION ACTIVE...</div>';
+            }
+        }
+
+        function onResults(results) {
+            if(results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                // Draw on the small preview canvas
+                drawHandOverlay(results.multiHandLandmarks[0]);
+                
+                const lm = results.multiHandLandmarks[0];
+                let count = 0;
+                if(lm[8].y < lm[6].y) count++; 
+                if(lm[12].y < lm[10].y) count++; 
+                if(lm[16].y < lm[14].y) count++; 
+                if(lm[20].y < lm[18].y) count++;
+                if(Math.sqrt(Math.pow(lm[4].x-lm[17].x,2)) > 0.15) count++;
+
+                handleGesture(count, lm);
+            } else {
+                overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                alienHud.style.opacity = 0;
+                currentLandmarks = null;
+            }
+        }
+
+        function drawHandOverlay(landmarks) {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            const w = overlayCanvas.width;
+            const h = overlayCanvas.height;
+            const fingerChains = [[4, 3, 2], [8, 6, 5], [12, 10, 9], [16, 14, 13], [20, 18, 17]];
+            
+            overlayCtx.lineWidth = 2;
+            overlayCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // Brighter line
+            overlayCtx.fillStyle = CURRENT_MODE === 'SOLAR' ? '#ffaa00' : '#00ffff';
+
+            fingerChains.forEach(chain => {
+                const p1 = landmarks[chain[0]];
+                const p2 = landmarks[chain[1]];
+                const p3 = landmarks[chain[2]];
+                if (p1 && p2 && p3) {
+                    overlayCtx.beginPath();
+                    overlayCtx.moveTo(p1.x * w, p1.y * h);
+                    overlayCtx.lineTo(p2.x * w, p2.y * h);
+                    overlayCtx.lineTo(p3.x * w, p3.y * h);
+                    overlayCtx.stroke();
+                    [p1, p2, p3].forEach(p => {
+                        overlayCtx.beginPath();
+                        overlayCtx.arc(p.x * w, p.y * h, 3, 0, 2 * Math.PI);
+                        overlayCtx.fill();
+                    });
+                }
+            });
+        }
+
+        // Init
+        initSolar();
+        initParticles();
+        switchMode('SOLAR');
+
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7});
+        hands.onResults(onResults);
+
+        const videoCamera = new Camera(document.getElementById('input_video'), {
+            onFrame: async () => { await hands.send({ image: document.getElementById('input_video') }); },
+            width: 1280, height: 720
+        });
+        videoCamera.start();
+
+        animate();
+    </script>
+</body>
+</html>
