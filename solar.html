@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NOVA SYSTEMS | Vortex Protocol</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@300;500&display=swap"
+        rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
@@ -13,21 +16,31 @@
             --glow: #ffcc00;
         }
 
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             background-color: #020205;
             font-family: 'Orbitron', sans-serif;
             color: white;
         }
 
-        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
 
         /* --- HUD TELEMETRY --- */
         #hud {
             position: absolute;
-            top: 30px; left: 30px;
+            top: 30px;
+            left: 30px;
             width: 340px;
             background: rgba(0, 0, 0, 0.6);
             border-left: 2px solid var(--glow);
@@ -44,13 +57,14 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             padding-bottom: 5px;
         }
 
         .dot {
             display: inline-block;
-            width: 6px; height: 6px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             margin-right: 10px;
         }
@@ -58,7 +72,8 @@
         /* --- CENTER INTERFACE --- */
         .glass-card {
             position: absolute;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
             background: var(--glass);
             backdrop-filter: blur(20px);
@@ -82,7 +97,7 @@
             width: 100%;
             padding: 15px;
             margin: 12px 0;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border);
             color: white;
             font-family: 'Roboto Mono';
@@ -91,7 +106,9 @@
             transition: 0.3s;
         }
 
-        input:focus { border-color: var(--glow); }
+        input:focus {
+            border-color: var(--glow);
+        }
 
         button {
             margin-top: 30px;
@@ -113,6 +130,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div id="hud">
@@ -126,7 +144,10 @@
         <input type="tel" placeholder="COMMS_ENCRYPTION_KEY">
         <button>ENGAGE DRIVE</button>
     </div> -->
-
+    <div class="glass-card">
+        <h1>Abhishek</h1>
+        <p>8750892993<br>Aj956087@gmail.com</p>
+    </div>
     <script>
         const PLANET_DATA = [
             { name: "SOLARIS", radius: "696k", speed: "STATIONARY", color: 0xffaa00, size: 5, dist: 0 },
@@ -145,7 +166,7 @@
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-            
+
             // Adjust camera to look down the "tunnel" like your reference image
             camera.position.set(20, 30, 80);
             camera.lookAt(0, 0, -50);
@@ -171,10 +192,10 @@
             const starPositions = new Float32Array(starCount * 3);
             const starSizes = new Float32Array(starCount);
 
-            for(let i=0; i < starCount; i++) {
-                starPositions[i*3] = (Math.random() - 0.5) * 1000;
-                starPositions[i*3+1] = (Math.random() - 0.5) * 1000;
-                starPositions[i*3+2] = (Math.random() - 0.5) * 1500;
+            for (let i = 0; i < starCount; i++) {
+                starPositions[i * 3] = (Math.random() - 0.5) * 1000;
+                starPositions[i * 3 + 1] = (Math.random() - 0.5) * 1000;
+                starPositions[i * 3 + 2] = (Math.random() - 0.5) * 1500;
                 // Varying sizes for brightness effect
                 starSizes[i] = Math.random() * 2;
             }
@@ -195,15 +216,15 @@
 
             // 3. PLANETS & ORBITS
             PLANET_DATA.forEach((data, i) => {
-                if(i === 0) return;
+                if (i === 0) return;
 
                 // Create Orbit Line (Matching Planet Color)
                 const orbitGeo = new THREE.RingGeometry(data.dist - 0.1, data.dist + 0.1, 128);
-                const orbitMat = new THREE.MeshBasicMaterial({ 
-                    color: data.color, 
-                    side: THREE.DoubleSide, 
-                    transparent: true, 
-                    opacity: 0.15 
+                const orbitMat = new THREE.MeshBasicMaterial({
+                    color: data.color,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.15
                 });
                 const orbit = new THREE.Mesh(orbitGeo, orbitMat);
                 orbit.rotation.x = Math.PI / 2;
@@ -211,14 +232,14 @@
 
                 // Planet
                 const pGeo = new THREE.SphereGeometry(data.size, 32, 32);
-                const pMat = new THREE.MeshStandardMaterial({ 
+                const pMat = new THREE.MeshStandardMaterial({
                     color: data.color,
                     emissive: data.color,
                     emissiveIntensity: 0.2,
                     roughness: 0.5
                 });
                 const planet = new THREE.Mesh(pGeo, pMat);
-                
+
                 planetObjects.push({
                     mesh: planet,
                     dist: data.dist,
@@ -250,8 +271,8 @@
             const time = Date.now() * 0.001;
 
             // BACKGROUND MOVEMENT: Stars fly toward/past the camera
-            stars.position.z += 1.5; 
-            if(stars.position.z > 500) stars.position.z = -500;
+            stars.position.z += 1.5;
+            if (stars.position.z > 500) stars.position.z = -500;
 
             // Star Twinkle Effect
             stars.material.opacity = 0.5 + Math.sin(time * 2) * 0.3;
@@ -279,4 +300,5 @@
         init();
     </script>
 </body>
+
 </html>
