@@ -362,7 +362,7 @@ for (let i = 0; i < 2000 * 3; i++) {
     starPositions[i] = (Math.random() - 0.5) * 100;
 }
 starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05 });
+const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
 const stars = new THREE.Points(starGeometry, starMaterial);
 scene.add(stars);
 
@@ -377,7 +377,7 @@ for (let i = 0; i < particleCount; i++) {
 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-const material = new THREE.PointsMaterial({ size: 0.04, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending });
+const material = new THREE.PointsMaterial({ size: 0.08, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending });
 const points = new THREE.Points(geometry, material);
 scene.add(points);
 
