@@ -36,97 +36,36 @@
             z-index: 1;
         }
 
-        /* --- HUD TELEMETRY --- */
+        /* --- NAME CARD --- */
         #hud {
             position: absolute;
             top: 30px;
             left: 30px;
-            width: 340px;
-            background: rgba(0, 0, 0, 0.6);
-            border-left: 2px solid var(--glow);
-            padding: 20px;
-            font-family: 'Roboto Mono', monospace;
-            font-size: 10px;
-            pointer-events: none;
-            backdrop-filter: blur(10px);
-            z-index: 10;
-            letter-spacing: 1px;
-        }
-
-        .telemetry-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 5px;
-        }
-
-        .dot {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        /* --- CENTER INTERFACE --- */
-        .glass-card {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            width: 300px;
             background: var(--glass);
             backdrop-filter: blur(20px);
             border: 1px solid var(--border);
             border-radius: 2px;
-            padding: 50px;
-            text-align: center;
-            z-index: 5;
-            min-width: 380px;
+            padding: 30px;
+            font-family: 'Orbitron', sans-serif;
+            pointer-events: none;
+            z-index: 10;
         }
 
-        h1 {
+        #hud h1 {
             letter-spacing: 8px;
-            margin-bottom: 40px;
+            margin: 0 0 20px 0;
             font-size: 1.8rem;
             font-weight: 700;
             text-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
         }
 
-        input {
-            width: 100%;
-            padding: 15px;
-            margin: 12px 0;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            color: white;
-            font-family: 'Roboto Mono';
-            outline: none;
-            box-sizing: border-box;
-            transition: 0.3s;
-        }
-
-        input:focus {
-            border-color: var(--glow);
-        }
-
-        button {
-            margin-top: 30px;
-            width: 100%;
-            padding: 15px;
-            background: transparent;
-            border: 1px solid var(--glow);
-            color: var(--glow);
-            font-family: 'Orbitron';
-            cursor: pointer;
-            letter-spacing: 2px;
-            transition: 0.4s;
-        }
-
-        button:hover {
-            background: var(--glow);
-            color: black;
-            box-shadow: 0 0 30px var(--glow);
+        #hud p {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            line-height: 1.8;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.9);
         }
     </style>
 </head>
@@ -134,17 +73,6 @@
 <body>
 
     <div id="hud">
-        <h3 style="margin-top:0; font-size: 12px; color: var(--glow); margin-bottom: 20px;">VORTEX_TELEMETRY_v4.0</h3>
-        <div id="telemetry-list"></div>
-    </div>
-
-    <!-- <div class="glass-card">
-        <h1>NOVA SYSTEMS</h1>
-        <input type="email" placeholder="USER_IDENTIFICATION">
-        <input type="tel" placeholder="COMMS_ENCRYPTION_KEY">
-        <button>ENGAGE DRIVE</button>
-    </div> -->
-    <div class="glass-card">
         <h1>Abhishek</h1>
         <p>8750892993<br>Aj956087@gmail.com</p>
     </div>
@@ -254,16 +182,7 @@
         }
 
         function setupHUD() {
-            const list = document.getElementById('telemetry-list');
-            PLANET_DATA.forEach(p => {
-                const item = document.createElement('div');
-                item.className = 'telemetry-item';
-                item.innerHTML = `
-                    <span><span class="dot" style="background:${'#' + p.color.toString(16).padStart(6, '0')}"></span>${p.name}</span>
-                    <span>${p.radius} | ${p.speed}</span>
-                `;
-                list.appendChild(item);
-            });
+            // HUD now displays static name card, no dynamic setup needed
         }
 
         function animate() {
