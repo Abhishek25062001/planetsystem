@@ -7,6 +7,10 @@
     <title>NOVA SYSTEMS | Interstellar UI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;700&family=Roboto+Mono:wght@400&display=swap"
         rel="stylesheet">
+    <script>
+        !function (t, e) { var o, n, p, r; e.__SV || (window.posthog = e, e._i = [], e.init = function (i, s, a) { function g(t, e) { var o = e.split("."); 2 == o.length && (t = t[o[0]], e = o[1]), t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } } (p = t.createElement("script")).type = "text/javascript", p.async = !0, p.src = s.api_host + "/static/array.js", (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r); var u = e; for (void 0 !== a ? u = e[a] = [] : a = "posthog", u.people = u.people || [], u.toString = function (t) { var e = "posthog"; return "posthog" !== a && (e += "." + a), t || (e += " (stub)"), e }, u.people.toString = function () { return u.toString(1) + ".people (stub)" }, o = "capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "), n = 0; n < o.length; n++)g(u, o[n]); e._i.push([i, s, a]) }, e.__SV = 1) }(document, window.posthog || []);
+        posthog.init('phc_INSERT_YOUR_KEY_HERE', { api_host: 'https://app.posthog.com' })
+    </script>
     <style>
         :root {
             --primary: #00f2ff;
@@ -176,6 +180,108 @@
                 padding: 30px;
             }
         }
+
+        /* Info Button & Modal */
+        .info-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .info-btn:hover {
+            box-shadow: 0 0 15px var(--primary);
+            background: rgba(0, 242, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            display: none;
+            /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid var(--primary);
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+            text-align: left;
+        }
+
+        .modal-content h2 {
+            color: var(--primary);
+            font-family: 'Roboto Mono', monospace;
+            margin-top: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .modal-content p,
+        .modal-content ul {
+            font-family: 'Inter', sans-serif;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .modal-content ul {
+            padding-left: 20px;
+        }
+
+        .modal-content li {
+            margin-bottom: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--primary);
+        }
     </style>
 </head>
 
@@ -194,7 +300,30 @@
 
     <div id="canvas-container"></div>
 
-   
+    <!-- Info Button -->
+    <button class="info-btn" onclick="toggleModal()">i</button>
+
+    <!-- Info Modal -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="toggleModal()">&times;</button>
+            <h2>// SYSTEM INFO</h2>
+            <p>Welcome to the <strong>NOVA SYSTEMS Interstellar UI</strong>.</p>
+            <p>This visualization renders a localized star system using real-time WebGL rendering.</p>
+            <ul>
+                <li><strong>Engine:</strong> Three.js WebGL Renderer</li>
+                <li><strong>Objects:</strong> Volumetric Sun Particles (Fibonacci Sphere)</li>
+                <li><strong>Tracking:</strong> Live telemetry enabled via PostHog</li>
+                <li><strong>Status:</strong> Operational</li>
+            </ul>
+            <p style="font-size: 0.9em; opacity: 0.6; margin-top: 20px;">
+                User interactions are monitored for quality assurance. <br>
+                System version: v2.4.0-alpha
+            </p>
+        </div>
+    </div>
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -321,6 +450,31 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
+
+        function toggleModal() {
+            const modal = document.getElementById('infoModal');
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                setTimeout(() => { modal.style.display = 'none'; }, 300); // Wait for transition
+            } else {
+                modal.style.display = 'flex';
+                // Trigger reflow
+                modal.offsetHeight;
+                modal.classList.add('active');
+
+                // Track event
+                if (window.posthog) {
+                    posthog.capture('info_modal_opened');
+                }
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('infoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'infoModal') {
+                toggleModal();
+            }
+        });
 
         // Keep track of trail points
         let trailIdx = 0;

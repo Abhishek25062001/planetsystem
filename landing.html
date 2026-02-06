@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coming Soon</title>
+    <script>
+        !function (t, e) { var o, n, p, r; e.__SV || (window.posthog = e, e._i = [], e.init = function (i, s, a) { function g(t, e) { var o = e.split("."); 2 == o.length && (t = t[o[0]], e = o[1]), t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } } (p = t.createElement("script")).type = "text/javascript", p.async = !0, p.src = s.api_host + "/static/array.js", (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r); var u = e; for (void 0 !== a ? u = e[a] = [] : a = "posthog", u.people = u.people || [], u.toString = function (t) { var e = "posthog"; return "posthog" !== a && (e += "." + a), t || (e += " (stub)"), e }, u.people.toString = function () { return u.toString(1) + ".people (stub)" }, o = "capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "), n = 0; n < o.length; n++)g(u, o[n]); e._i.push([i, s, a]) }, e.__SV = 1) }(document, window.posthog || []);
+        posthog.init('phc_INSERT_YOUR_KEY_HERE', { api_host: 'https://app.posthog.com' })
+    </script>
     <style>
         /* General Styles */
         body {
@@ -24,7 +29,7 @@
             background: white;
             padding: 3rem;
             border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             max-width: 500px;
             width: 90%;
         }
@@ -35,7 +40,7 @@
             margin-bottom: 0.5rem;
             color: #2c3e50;
         }
-        
+
         p.subtitle {
             font-size: 1.1rem;
             color: #7f8c8d;
@@ -61,9 +66,10 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
-            flex-direction: column; /* Stacks on mobile, row on desktop */
+            flex-direction: column;
+            /* Stacks on mobile, row on desktop */
         }
-        
+
         @media (min-width: 480px) {
             .input-group {
                 flex-direction: row;
@@ -101,19 +107,21 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="container">
         <span class="badge">Under Construction</span>
-        
+
         <h1>MyNewDomain.com</h1>
-        
+
         <p class="subtitle">
             We are building something extraordinary. <br>
             Stay tuned for the big reveal.
         </p>
 
-        <form action="#" method="get">
+        <form action="#" method="get"
+            onsubmit="if(window.posthog){posthog.capture('email_submitted', {email: this.elements[0].value})}">
             <div class="input-group">
                 <input type="email" placeholder="Enter your email" required>
                 <button type="submit">Notify Me</button>
@@ -126,4 +134,5 @@
     </div>
 
 </body>
+
 </html>
