@@ -282,6 +282,14 @@
         .close-btn:hover {
             color: var(--primary);
         }
+
+        /* Magnetic Effect */
+        .magnetic {
+            display: inline-block;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            /* Smooth return */
+            will-change: transform;
+        }
     </style>
 </head>
 
@@ -300,15 +308,27 @@
 
     <div id="canvas-container"></div>
 
+    <div class="main-container">
+        <div class="glass-card">
+            <h1 class="magnetic">NOVA SYSTEMS</h1>
+            <p class="magnetic">INTERSTELLAR UI <br> DIAGNOSTICS & CONTROL</p>
+
+            <div class="input-group">
+                <input type="text" placeholder="ACCESS CODE" class="magnetic" style="margin-bottom: 10px;">
+                <button class="magnetic">INITIALIZE</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Info Button -->
     <button class="info-btn" onclick="toggleModal()">i</button>
 
     <!-- Info Modal -->
     <div class="modal-overlay" id="infoModal">
         <div class="modal-content">
-            <button class="close-btn" onclick="toggleModal()">&times;</button>
+            <button class="close-btn magnetic" onclick="toggleModal()">&times;</button>
             <h2>// SYSTEM INFO</h2>
-            <p>Welcome to the <strong>NOVA SYSTEMS Interstellar UI</strong>.</p>
+            <p>Welcome to the <strong class="magnetic">NOVA SYSTEMS Interstellar UI</strong>.</p>
             <p>This visualization renders a localized star system using real-time WebGL rendering.</p>
             <ul>
                 <li><strong>Engine:</strong> Three.js WebGL Renderer</li>
@@ -521,6 +541,28 @@
 
         init();
         animate();
+
+        // --- Magnetic Effect Logic ---
+        const magneticElements = document.querySelectorAll('.magnetic');
+
+        magneticElements.forEach(el => {
+            el.addEventListener('mousemove', (e) => {
+                const rect = el.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                // Strength of the pull (adjust for more/less elasticity)
+                const strength = 20;
+                const moveX = (x / rect.width) * strength;
+                const moveY = (y / rect.height) * strength;
+
+                el.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = 'translate(0px, 0px)';
+            });
+        });
     </script>
 </body>
 
