@@ -204,6 +204,30 @@
         window.addEventListener('resize', resizeOverlay);
         resizeOverlay();
 
+        // Handle window resize for 3D canvas and cameras
+        function handleResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            // Update renderer
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Update cameras
+            if (SolarSystem.camera) {
+                SolarSystem.camera.aspect = width / height;
+                SolarSystem.camera.updateProjectionMatrix();
+            }
+            if (ParticleSystem.camera) {
+                ParticleSystem.camera.aspect = width / height;
+                ParticleSystem.camera.updateProjectionMatrix();
+            }
+
+            // Update overlay
+            resizeOverlay();
+        }
+        window.addEventListener('resize', handleResize);
+
         // Scene Managers
         const SolarSystem = { scene: null, camera: null, active: false };
         const ParticleSystem = { scene: null, camera: null, active: false };
