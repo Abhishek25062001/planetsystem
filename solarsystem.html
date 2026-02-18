@@ -204,7 +204,44 @@
                 pivot.add(mesh);
                 mesh.position.x = data.dist;
 
-                planetMeshes.push({ mesh, pivot, data, angle: Math.random() * Math.PI * 2 });
+                let maelleGroup = null;
+                if (data.name === "Earth") {
+                    maelleGroup = new THREE.Group();
+
+                    // Image Sprite
+                    const loader = new THREE.TextureLoader();
+                    const map = loader.load('ma.png');
+                    const spriteMat = new THREE.SpriteMaterial({ map: map });
+                    const sprite = new THREE.Sprite(spriteMat);
+                    sprite.scale.set(3, 3, 1);
+                    sprite.position.y = 2.5;
+                    maelleGroup.add(sprite);
+
+                    // Text Sprite (Canvas)
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 512;
+                    canvas.height = 128;
+                    ctx.font = 'Bold 60px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.textAlign = 'center';
+                    // Text Shadow/Stroke for readability
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 6;
+                    ctx.strokeText("Maëlle live here", 256, 90);
+                    ctx.fillText("Maëlle live here", 256, 90);
+
+                    const textTex = new THREE.CanvasTexture(canvas);
+                    const textMat = new THREE.SpriteMaterial({ map: textTex });
+                    const textSprite = new THREE.Sprite(textMat);
+                    textSprite.scale.set(6, 1.5, 1);
+                    textSprite.position.y = 5.0; // Above image
+                    maelleGroup.add(textSprite);
+
+                    systemGroup.add(maelleGroup);
+                }
+
+                planetMeshes.push({ mesh, pivot, data, angle: Math.random() * Math.PI * 2, maelleGroup });
             });
 
             // Starfield
@@ -254,6 +291,12 @@
 
                 // Self rotation
                 p.mesh.rotation.y += p.data.rot;
+
+                // Update Maëlle Group position
+                if (p.maelleGroup) {
+                    p.maelleGroup.position.copy(p.mesh.position);
+                    p.maelleGroup.position.y += 0.5; // Slight offset from center if needed, or rely on sprite Y offset
+                }
             });
 
             renderer.render(scene, camera);
